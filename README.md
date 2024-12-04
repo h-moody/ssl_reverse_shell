@@ -139,11 +139,3 @@ The client will connect back to the server.
 - Consider replacing the self-signed certificate with one from a trusted Certificate Authority for real-world use.
 
 ---
-
-## **License**
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-## **Disclaimer**
-This project is intended for ethical and educational use in controlled environments only. Misuse of this software could result in legal consequences. Use responsibly!
